@@ -100,7 +100,7 @@
         // 任務一：獨立讀取 AI 妖股雷達 (top10.json)
         // ==========================================
         try {
-            const resAI = await fetch('./top10.json?t=' + new Date().getTime());
+            const resAI = await fetch('./top20.json?t=' + new Date().getTime());
             if (resAI.ok) {
                 // 如果有之前的舊資料 (例如週五的)，就完美顯示出來！
                 const dataAI = await resAI.json();
