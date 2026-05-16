@@ -63,6 +63,33 @@
             transition: all 0.2s; letter-spacing: 1px; text-transform: none;
          }
         .cute-btn:hover { background: #FF69B4; transform: translateY(-3px) scale(1.05); }
+
+        /* 專業風切換按鈕樣式 */
+        .pro-link-container {
+        text-align: center;
+        margin-top: 25px;
+        }
+        .pro-btn {
+        display: inline-block;
+        padding: 12px 30px;
+        background: transparent;
+        color: #3b82f6 !important;
+        text-decoration: none;
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 14px;
+        border: 2px solid #3b82f6;
+        border-radius: 4px;
+        letter-spacing: 2px;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        transition: all 0.3s ease;
+        }
+        .pro-btn:hover {
+        background: #3b82f6;
+        color: #050514 !important;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+        transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -74,6 +101,10 @@
 
 <div style="text-align: center;">
     <a href="cute_cart.html" class="cute-btn">前往可愛購物車 🛒✨</a>
+</div>
+
+<div class="pro-link-container">
+    <a href="pro_radar.html" class="pro-btn">[ ENTER_QUANTUM_PANEL // 切換專業數據儀表板 ]</a>
 </div>
 
 <div id="radar-grid"></div>
