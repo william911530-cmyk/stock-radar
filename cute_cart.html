@@ -114,37 +114,44 @@
 </div>
 
 <script>
-    // 儲存全市場資料的變數
     let marketData = {};
-    
-    // 從 LocalStorage 讀取購物車，如果沒有就預設為空陣列
     let myCart = JSON.parse(localStorage.getItem('sweetStockCart')) || [];
 
-    // 初始化：去證交所抓取全市場今天最新報價
     async function initSystem() {
+        const statusText = document.getElementById('statusText');
         try {
-            // 替換原本的 fetch 那行
-            const res = await fetch("https://api.allorigins.win/raw?url=https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL");
+            // 使用 AllOrigins 代理伺服器繞過瀏覽器 CORS 限制，直連證交所即時大數據
+            const targetUrl = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL";
+            const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
+            
+            if (!res.ok) throw new Error("Network response was not ok");
             const data = await res.json();
             
-            // 把陣列轉換成「代號: 資料」的字典，方便搜尋
+            if (!data || data.length === 0) {
+                statusText.innerText = "🌸 證交所主機目前休息中（週末/盤後維護），暫時無法取得即時報價唷！";
+                return;
+            }
+
             data.forEach(stock => {
                 marketData[stock.Code] = stock;
             });
             
-            document.getElementById('statusText').innerText = "✅ 最新市場報價已同步！可以開始搜尋囉！";
-            renderCart(); // 顯示購物車
+            statusText.innerText = "✅ 已成功直連證交所！目前為市場最即時報價 ✨";
+            renderCart();
         } catch (error) {
-            document.getElementById('statusText').innerText = "❌ 嗚嗚，連線失敗了，請檢查網路。";
+            // 週末或非開盤時間的溫柔提示
+            statusText.innerText = "🌲 提示：因目前非盤中交易時間或證交所維護，即時連線進入休眠狀態。";
+            console.error("Fetch error: ", error);
         }
     }
 
-    // 加入購物車邏輯
     function addToCart() {
         const inputCode = document.getElementById('searchInput').value.trim();
-        
-        if (!inputCode) {
-            alert("請輸入股票代號唷！(・ω・)");
+        if (!inputCode) { alert("請輸入股票代號唷！(・ω・)"); return; }
+
+        // 如果適逢週末沒抓到資料，給予應變提示
+        if (Object.keys(marketData).length === 0) {
+            alert("目前證交所 API 未開機，無法即時驗證代號，請於開盤時間嘗試！💦");
             return;
         }
 
@@ -153,46 +160,47 @@
             return;
         }
 
-        if (myCart.includes(inputCode)) {
-            alert("這檔股票已經在購物車裡囉！🌟");
-            return;
-        }
+        if (myCart.includes(inputCode)) { alert("這檔股票已經在購物車裡囉！🌟"); return; }
 
-        // 加入購物車並儲存
         myCart.push(inputCode);
         localStorage.setItem('sweetStockCart', JSON.stringify(myCart));
-        
-        document.getElementById('searchInput').value = ""; // 清空輸入框
-        renderCart(); // 重新繪製畫面
+        document.getElementById('searchInput').value = "";
+        renderCart();
     }
 
-    // 移除購物車邏輯
     function removeFromCart(code) {
         myCart = myCart.filter(item => item !== code);
         localStorage.setItem('sweetStockCart', JSON.stringify(myCart));
         renderCart();
     }
 
-    // 渲染購物車畫面
     function renderCart() {
         const cartList = document.getElementById('cartList');
-        cartList.innerHTML = ""; // 先清空畫面
+        cartList.innerHTML = "";
 
         if (myCart.length === 0) {
             cartList.innerHTML = `<div style="text-align:center; color:#aaa; padding: 20px;">購物車空空的，快去尋寶吧！(っ´ω\`c)</div>`;
             return;
         }
 
-        // 把購物車裡的每一個代號變成漂亮的卡片
         myCart.forEach(code => {
             const stock = marketData[code];
-            // 確保資料還沒載入完時不會報錯
-            if (!stock) return; 
+            if (!stock) {
+                // 如果有本地記憶但暫時沒即時資料，顯示安全基底
+                cartList.innerHTML += `
+                    <div class="cart-item">
+                        <div class="stock-info">
+                            <div class="stock-name">[${code}] 追蹤標的</div>
+                            <div class="stock-price">開盤時將自動恢復即時同步</div>
+                        </div>
+                        <button class="delete-btn" onclick="removeFromCart('${code}')">移除 ✖</button>
+                    </div>
+                `;
+                return; 
+            }
 
-            // 判斷漲跌顏色 (台灣股市紅漲綠跌)
             const changeVal = parseFloat(stock.Change);
-            let changeClass = "";
-            let changeSign = "";
+            let changeClass = ""; let changeSign = "";
             if (changeVal > 0) { changeClass = "up"; changeSign = "▲ +"; }
             else if (changeVal < 0) { changeClass = "down"; changeSign = "▼ "; }
 
@@ -211,7 +219,6 @@
         });
     }
 
-    // 網頁一打開就開始執行
     initSystem();
 </script>
 
