@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 甜心選股雷達 & 購物車 ✨</title>
+    <style>
+        /* 清新可愛風色系與字體 */
+        :root {
+            --bg-color: #FFF0F5; /* 薰衣草淺粉 */
+            --primary: #FFB6C1;  /* 櫻花粉 */
+            --secondary: #87CEFA; /* 天空藍 */
+            --text-main: #5D4037; /* 巧克力色，比純黑更柔和 */
+            --card-bg: #FFFFFF;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Nunito', 'Comic Sans MS', 'Microsoft JhengHei', sans-serif;
+            margin: 0; padding: 20px;
+            background-image: radial-gradient(#FFC0CB 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        .container { max-width: 700px; margin: 0 auto; padding-bottom: 80px; }
+        
+        h1 { text-align: center; color: #FF69B4; text-shadow: 2px 2px #FFE4E1; font-size: 28px; }
+        .status-bar { text-align: center; font-size: 14px; color: #888; margin-bottom: 20px; }
+
+        /* 搜尋區塊設計 */
+        .search-box {
+            display: flex; gap: 10px; margin-bottom: 25px;
+            background: var(--card-bg); padding: 15px; border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(255, 182, 193, 0.4);
+        }
+        input {
+            flex: 1; padding: 12px 20px; border: 2px solid var(--primary);
+            border-radius: 15px; font-size: 16px; outline: none;
+            color: var(--text-main); font-weight: bold;
+        }
+        input::placeholder { color: #ccc; font-weight: normal; }
+        input:focus { border-color: var(--secondary); box-shadow: 0 0 10px rgba(135, 206, 250, 0.3); }
+        button {
+            background: var(--primary); color: white; border: none;
+            padding: 0 20px; border-radius: 15px; font-size: 16px; font-weight: bold;
+            cursor: pointer; transition: transform 0.2s, background 0.2s;
+        }
+        button:hover { background: #FF69B4; transform: scale(1.05); }
+
+        /* 購物車區塊設計 */
+        .cart-container {
+            background: var(--card-bg); border-radius: 20px; padding: 20px;
+            box-shadow: 0 8px 20px rgba(135, 206, 250, 0.3);
+            border: 3px dashed var(--secondary);
+        }
+        .cart-container h2 { margin-top: 0; color: var(--secondary); display: flex; align-items: center; gap: 10px;}
+        
+        .cart-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; margin-bottom: 10px;
+            background: #F0F8FF; border-radius: 15px;
+            transition: transform 0.2s;
+        }
+        .cart-item:hover { transform: translateX(5px); }
+        .stock-info { display: flex; flex-direction: column; gap: 5px; }
+        .stock-name { font-size: 18px; font-weight: bold; color: var(--text-main); }
+        .stock-price { font-size: 14px; color: #666; }
+        .up { color: #FF4500; font-weight: bold; }
+        .down { color: #32CD32; font-weight: bold; }
+        
+        .delete-btn { background: #FFB6C1; padding: 8px 12px; border-radius: 10px; font-size: 14px; }
+        .delete-btn:hover { background: #FF1493; }
+
+        /* 🐾 電子寵物動畫 (使用 CSS Keyframes) */
+        #pet {
+            position: fixed; bottom: 10px; left: -50px;
+            font-size: 45px; z-index: 1000;
+            animation: walk-and-bounce 12s linear infinite alternate;
+        }
+
+        @keyframes walk-and-bounce {
+            0%   { left: 0; transform: scaleX(1) translateY(0); }
+            10%  { transform: scaleX(1) translateY(-15px); }
+            20%  { transform: scaleX(1) translateY(0); }
+            30%  { transform: scaleX(1) translateY(-15px); }
+            49%  { transform: scaleX(1) translateY(0); }
+            50%  { transform: scaleX(-1) translateY(0); /* 轉身 */ }
+            60%  { transform: scaleX(-1) translateY(-15px); }
+            70%  { transform: scaleX(-1) translateY(0); }
+            80%  { transform: scaleX(-1) translateY(-15px); }
+            100% { left: calc(100vw - 80px); transform: scaleX(-1) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="pet">🐕</div>
+
+<div class="container">
+    <h1>✨ 甜心選股雷達 ✨</h1>
+    <div class="status-bar" id="statusText">小精靈正在去證交所搬運最新報價... 🏃‍♀️💨</div>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="輸入股票代號 (例如: 2330)">
+        <button onclick="addToCart()">加到購物車 🛒</button>
+    </div>
+
+    <div class="cart-container">
+        <h2>🛍️ 我的股票購物車</h2>
+        <div id="cartList">
+            </div>
+    </div>
+</div>
+
+<script>
+    // 儲存全市場資料的變數
+    let marketData = {};
+    
+    // 從 LocalStorage 讀取購物車，如果沒有就預設為空陣列
+    let myCart = JSON.parse(localStorage.getItem('sweetStockCart')) || [];
+
+    // 初始化：去證交所抓取全市場今天最新報價
+    async function initSystem() {
+        try {
+            const res = await fetch("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL");
+            const data = await res.json();
+            
+            // 把陣列轉換成「代號: 資料」的字典，方便搜尋
+            data.forEach(stock => {
+                marketData[stock.Code] = stock;
+            });
+            
+            document.getElementById('statusText').innerText = "✅ 最新市場報價已同步！可以開始搜尋囉！";
+            renderCart(); // 顯示購物車
+        } catch (error) {
+            document.getElementById('statusText').innerText = "❌ 嗚嗚，連線失敗了，請檢查網路。";
+        }
+    }
+
+    // 加入購物車邏輯
+    function addToCart() {
+        const inputCode = document.getElementById('searchInput').value.trim();
+        
+        if (!inputCode) {
+            alert("請輸入股票代號唷！(・ω・)");
+            return;
+        }
+
+        if (!marketData[inputCode]) {
+            alert("找不到這檔股票捏，請確認代號是否正確！💦");
+            return;
+        }
+
+        if (myCart.includes(inputCode)) {
+            alert("這檔股票已經在購物車裡囉！🌟");
+            return;
+        }
+
+        // 加入購物車並儲存
+        myCart.push(inputCode);
+        localStorage.setItem('sweetStockCart', JSON.stringify(myCart));
+        
+        document.getElementById('searchInput').value = ""; // 清空輸入框
+        renderCart(); // 重新繪製畫面
+    }
+
+    // 移除購物車邏輯
+    function removeFromCart(code) {
+        myCart = myCart.filter(item => item !== code);
+        localStorage.setItem('sweetStockCart', JSON.stringify(myCart));
+        renderCart();
+    }
+
+    // 渲染購物車畫面
+    function renderCart() {
+        const cartList = document.getElementById('cartList');
+        cartList.innerHTML = ""; // 先清空畫面
+
+        if (myCart.length === 0) {
+            cartList.innerHTML = `<div style="text-align:center; color:#aaa; padding: 20px;">購物車空空的，快去尋寶吧！(っ´ω\`c)</div>`;
+            return;
+        }
+
+        // 把購物車裡的每一個代號變成漂亮的卡片
+        myCart.forEach(code => {
+            const stock = marketData[code];
+            // 確保資料還沒載入完時不會報錯
+            if (!stock) return; 
+
+            // 判斷漲跌顏色 (台灣股市紅漲綠跌)
+            const changeVal = parseFloat(stock.Change);
+            let changeClass = "";
+            let changeSign = "";
+            if (changeVal > 0) { changeClass = "up"; changeSign = "▲ +"; }
+            else if (changeVal < 0) { changeClass = "down"; changeSign = "▼ "; }
+
+            cartList.innerHTML += `
+                <div class="cart-item">
+                    <div class="stock-info">
+                        <div class="stock-name">[${stock.Code}] ${stock.Name}</div>
+                        <div class="stock-price">
+                            現價: $${stock.ClosingPrice} | 
+                            漲跌: <span class="${changeClass}">${changeSign}${stock.Change}</span>
+                        </div>
+                    </div>
+                    <button class="delete-btn" onclick="removeFromCart('${stock.Code}')">移除 ✖</button>
+                </div>
+            `;
+        });
+    }
+
+    // 網頁一打開就開始執行
+    initSystem();
+</script>
+
+</body>
+</html>
