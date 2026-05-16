@@ -33,6 +33,7 @@ jobs:
         run: |
           git config user.name "Radar Bot"
           git config user.email "bot@example.com"
-          git add *.jsonon
-          # 如果檔案有更新，就推送到 GitHub 大廳
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update radar data" && git push)
+          git add *.json
+          # 如果有變動就存檔，沒變動就印出提示並正常結束
+          git commit -m "Auto-update radar data" || echo "資料無變動，略過存檔"
+          git push || echo "無新資料需上傳"
