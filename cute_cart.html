@@ -123,7 +123,8 @@
     // 初始化：去證交所抓取全市場今天最新報價
     async function initSystem() {
         try {
-            const res = await fetch("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL");
+            // 替換原本的 fetch 那行
+            const res = await fetch("https://api.allorigins.win/raw?url=https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL");
             const data = await res.json();
             
             // 把陣列轉換成「代號: 資料」的字典，方便搜尋
