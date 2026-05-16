@@ -3,117 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUANTUM // 專業量化雷達</title>
+    <title>QUANTUM // 專業量化雷達與群組管理</title>
     <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --accent: #3b82f6; --success: #22c55e; --border: #334155; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 30px; }
+        :root { --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --accent: #3b82f6; --success: #22c55e; --border: #334155; --danger: #ef4444; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 20px; font-size: 14px; }
         
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
-        .title-group h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px; }
-        .title-group p { margin: 5px 0 0 0; color: #94a3b8; font-size: 13px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
+        .title h1 { margin: 0; font-size: 22px; letter-spacing: 2px; }
         
-        /* 專業同步按鈕 */
-        .sync-btn {
-            background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px;
-            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
-        }
-        .sync-btn:hover { background: #2563eb; }
-        .sync-btn:active { transform: scale(0.95); }
-        .sync-icon { transition: transform 1s; }
-        .spinning { transform: rotate(360deg); }
+        /* 專業風格的切換按鈕 */
+        .module-btn { background: transparent; color: #94a3b8; border: 1px solid #94a3b8; padding: 6px 12px; font-family: monospace; cursor: pointer; text-decoration: none; font-size: 12px; transition: 0.2s; }
+        .module-btn:hover { background: #94a3b8; color: var(--bg); }
+        .sync-btn { background: var(--accent); color: white; border: none; padding: 6px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
 
-        /* 專業表格設計 */
-        table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #0f172a; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        tr:hover { background: #334155; }
+        /* 網格佈局：上方 AI 雷達，下方分左右（檢索與群組） */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 15px; height: 400px; overflow-y: auto; }
+        .panel-full { grid-column: 1 / -1; height: auto; }
+        .panel-title { font-size: 14px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-top: 0; margin-bottom: 15px; text-transform: uppercase; display: flex; justify-content: space-between;}
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: #94a3b8; font-size: 12px; }
         
-        .stock-id { font-weight: bold; color: var(--accent); }
-        .score-badge { background: rgba(59, 130, 246, 0.2); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .positive { color: var(--success); }
+        /* 檢索區設計 */
+        .search-bar { display: flex; gap: 10px; margin-bottom: 15px; }
+        input, select { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; flex: 1; outline: none; }
+        .add-btn { background: var(--success); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
         
-        /* 載入遮罩 */
-        #loader { display: none; text-align: center; padding: 40px; color: #94a3b8; }
-        .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* 群組區設計 */
+        .group-header { background: #0f172a; padding: 10px; margin-bottom: 10px; border-radius: 4px; border-left: 3px solid var(--accent); }
+        .group-name { font-weight: bold; font-size: 16px; margin-bottom: 5px;}
+        .group-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px dashed var(--border); }
+        .del-btn { background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 3px; cursor: pointer; padding: 2px 6px; font-size: 12px;}
+        .del-btn:hover { background: var(--danger); color: white; }
+
+        /* 自訂滾動條 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<div class="dashboard-header">
-    <div class="title-group">
-        <h1>QUANTUM QUANTITATIVE RADAR</h1>
-        <p>System Status: <span style="color: var(--success);">Online</span> | Strategy: Momentum Breakout</p>
+<div class="header-top">
+    <div class="title">
+        <h1>QUANTUM // TERMINAL</h1>
+        <div style="color: var(--success); font-size: 12px; margin-top: 5px;">SYS_STATUS: ONLINE | DATA_SRC: PYTHON_CORE</div>
     </div>
-    <button class="sync-btn" onclick="fetchData()">
-        <span class="sync-icon" id="syncIcon">⟳</span> 重新載入最新運算
-    </button>
+    <div style="display: flex; gap: 10px;">
+        <a href="cute_cart.html" class="module-btn">[ SWITCH_UI // 載入散戶視覺模組 ]</a>
+        <button class="sync-btn" onclick="loadAllData()">⟳ REFRESH_DB</button>
+    </div>
 </div>
 
-<div id="loader">
-    <div class="spinner"></div>
-    <div>Retrieving latest AI analysis...</div>
-</div>
+<div class="dashboard-grid">
+    <div class="panel panel-full">
+        <h3 class="panel-title">AI Momentum Radar (TOP 20) <span>SOURCE: top10.json</span></h3>
+        <table>
+            <thead><tr><th>代號</th><th>名稱</th><th>現價</th><th>10日動能</th><th>量化分數</th></tr></thead>
+            <tbody id="aiTable"></tbody>
+        </table>
+    </div>
 
-<table id="dataTable">
-    <thead>
-        <tr>
-            <th>代號名稱</th>
-            <th>最新現價</th>
-            <th>10日動能</th>
-            <th>MA5乖離</th>
-            <th>量化分數</th>
-        </tr>
-    </thead>
-    <tbody id="tableBody">
-        </tbody>
-</table>
+    <div class="panel">
+        <h3 class="panel-title">Market Explorer <span>SOURCE: all_stocks.json</span></h3>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="輸入代號或名稱檢索 (例如: 2330)" onkeyup="searchStocks()">
+            <select id="targetGroupSelect">
+                </select>
+        </div>
+        <div id="searchResults">
+            <div style="color:#94a3b8; text-align:center; padding: 20px;">請輸入關鍵字進行檢索</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3 class="panel-title">Observation Groups <span>LOCAL_STORAGE</span></h3>
+        <div class="search-bar">
+            <input type="text" id="newGroupName" placeholder="建立新群組 (例如: 穩定配息股)">
+            <button class="sync-btn" onclick="createGroup()">+ CREATE</button>
+        </div>
+        <div id="watchlistsContainer">
+            </div>
+    </div>
+</div>
 
 <script>
-    async function fetchData() {
-        const icon = document.getElementById('syncIcon');
-        const loader = document.getElementById('loader');
-        const table = document.getElementById('dataTable');
-        const tbody = document.getElementById('tableBody');
+    let allStocksData = [];
+    // 初始化群組資料，預設給一個 "核心觀察" 群組
+    let watchlists = JSON.parse(localStorage.getItem('quantumWatchlists')) || { "核心觀察": [] };
+
+    async function loadAllData() {
+        document.getElementById('aiTable').innerHTML = "<tr><td colspan='5'>Loading AI Data...</td></tr>";
         
-        // 播放載入動畫
-        icon.classList.add('spinning');
-        table.style.display = 'none';
-        loader.style.display = 'block';
-
         try {
-            // 加上時間戳記，確保每次按鈕都會強制抓最新資料，不使用瀏覽器暫存
-            const res = await fetch('./top10.json?t=' + new Date().getTime());
-            const results = await res.json();
+            // 1. 讀取 AI 雷達數據
+            const resAI = await fetch('./top10.json?t=' + new Date().getTime());
+            const dataAI = await resAI.json();
+            renderAITable(dataAI);
             
-            tbody.innerHTML = "";
-            results.forEach(r => {
-                const roc = r['10D動能(%)'];
-                tbody.innerHTML += `
-                    <tr>
-                        <td><span class="stock-id">${r['代號']}</span> ${r['名稱']}</td>
-                        <td>$${r['現價']}</td>
-                        <td class="${roc > 0 ? 'positive' : ''}">${roc > 0 ? '+' : ''}${roc}%</td>
-                        <td>${r['MA5乖離(%)']}%</td>
-                        <td><span class="score-badge">${r['妖股分數']}</span></td>
-                    </tr>
-                `;
-            });
+            // 2. 讀取全市場資料庫 (由 Python 產生)
+            const resAll = await fetch('./all_stocks.json?t=' + new Date().getTime());
+            allStocksData = await resAll.json();
             
-        } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444;">資料庫讀取失敗，請確認 Python 已執行完畢。</td></tr>`;
+        } catch (e) {
+            console.error(e);
+            document.getElementById('aiTable').innerHTML = "<tr><td colspan='5' style='color:#ef4444;'>ERROR: 無法讀取本地 JSON 資料庫，請確認 Python 已產生檔案。</td></tr>";
         }
-
-        // 停止動畫並顯示表格 (設定一點延遲讓使用者感覺有在讀取)
-        setTimeout(() => {
-            icon.classList.remove('spinning');
-            loader.style.display = 'none';
-            table.style.display = 'table';
-        }, 600);
+        
+        renderWatchlists();
+        updateGroupSelect();
     }
 
-    // 網頁載入時自動執行一次
-    fetchData();
+    function renderAITable(data) {
+        const tbody = document.getElementById('aiTable');
+        tbody.innerHTML = "";
+        data.forEach(r => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="color:var(--accent); font-weight:bold;">${r['代號']}</td>
+                    <td>${r['名稱']}</td><td>$${r['現價']}</td>
+                    <td style="color:${r['10D動能(%)'] > 0 ? 'var(--success)' : 'inherit'}">${r['10D動能(%)']}%</td>
+                    <td>${r['妖股分數']}</td>
+                </tr>`;
+        });
+    }
+
+    function searchStocks() {
+        const keyword = document.getElementById('searchInput').value.trim();
+        const resultsDiv = document.getElementById('searchResults');
+        
+        if (!keyword) { resultsDiv.innerHTML = ""; return; }
+        if (allStocksData.length === 0) { resultsDiv.innerHTML = "資料庫載入中..."; return; }
+
+        // 過濾前 50 筆符合條件的結果，避免畫面卡頓
+        const filtered = allStocksData.filter(s => s.Code.includes(keyword) || s.Name.includes(keyword)).slice(0, 50);
+        
+        if (filtered.length === 0) { resultsDiv.innerHTML = "查無標的"; return; }
+
+        resultsDiv.innerHTML = "";
+        filtered.forEach(stock => {
+            resultsDiv.innerHTML += `
+                <div class="group-item">
+                    <span>[${stock.Code}] ${stock.Name} - 現價: $${stock.ClosingPrice}</span>
+                    <button class="add-btn" onclick="addToGroup('${stock.Code}', '${stock.Name}')">+ ADD</button>
+                </div>`;
+        });
+    }
+
+    // --- 群組管理功能 ---
+
+    function createGroup() {
+        const name = document.getElementById('newGroupName').value.trim();
+        if (!name) return;
+        if (watchlists[name]) { alert("此群組已存在！"); return; }
+        
+        watchlists[name] = [];
+        saveWatchlists();
+        document.getElementById('newGroupName').value = "";
+    }
+
+    function addToGroup(code, name) {
+        const targetGroup = document.getElementById('targetGroupSelect').value;
+        if (!targetGroup) { alert("請先建立並選擇一個群組！"); return; }
+        
+        // 檢查是否已在群組內
+        const exists = watchlists[targetGroup].find(s => s.code === code);
+        if (exists) { alert("此標的已在該群組中！"); return; }
+
+        watchlists[targetGroup].push({ code: code, name: name });
+        saveWatchlists();
+        alert(`已將 ${name} 加入 [${targetGroup}]`);
+    }
+
+    function removeFromGroup(groupName, code) {
+        watchlists[groupName] = watchlists[groupName].filter(s => s.code !== code);
+        saveWatchlists();
+    }
+
+    function deleteGroup(groupName) {
+        if (confirm(`確定要刪除整個 [${groupName}] 群組嗎？`)) {
+            delete watchlists[groupName];
+            saveWatchlists();
+        }
+    }
+
+    function saveWatchlists() {
+        localStorage.setItem('quantumWatchlists', JSON.stringify(watchlists));
+        renderWatchlists();
+        updateGroupSelect();
+    }
+
+    function updateGroupSelect() {
+        const select = document.getElementById('targetGroupSelect');
+        select.innerHTML = "";
+        for (let groupName in watchlists) {
+            select.innerHTML += `<option value="${groupName}">${groupName}</option>`;
+        }
+    }
+
+    function renderWatchlists() {
+        const container = document.getElementById('watchlistsContainer');
+        container.innerHTML = "";
+        
+        for (let groupName in watchlists) {
+            let itemsHtml = "";
+            watchlists[groupName].forEach(stock => {
+                itemsHtml += `
+                    <div class="group-item">
+                        <span>[${stock.code}] ${stock.name}</span>
+                        <button class="del-btn" onclick="removeFromGroup('${groupName}', '${stock.code}')">DEL</button>
+                    </div>`;
+            });
+
+            container.innerHTML += `
+                <div class="group-header">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="group-name">${groupName} (${watchlists[groupName].length})</span>
+                        <button class="del-btn" onclick="deleteGroup('${groupName}')">刪除群組</button>
+                    </div>
+                    ${itemsHtml || '<div style="color:#64748b; font-size:12px; margin-top:5px;">空無一物...</div>'}
+                </div>`;
+        }
+    }
+
+    // 啟動系統
+    loadAllData();
 </script>
 
 </body>
