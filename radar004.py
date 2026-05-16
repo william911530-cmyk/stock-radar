@@ -1,0 +1,76 @@
+import yfinance as yf
+import pandas as pd
+import requests
+import warnings
+
+warnings.filterwarnings('ignore')
+
+print("🔥 啟動終極妖股雷達 (全市場掃描 + JSON輸出版) 🔥")
+print("1. 正在向證交所取得最新上市股票清單...")
+
+# 從證交所抓取全市場大數據名單
+url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
+res = requests.get(url)
+all_stocks = res.json()
+
+# 過濾出純股票 (代號長度為4的才是普通股票，排除權證、債券等)
+target_stocks = {s['Code'] + ".TW": s['Name'] for s in all_stocks if len(s['Code']) == 4}
+
+print(f"✅ 成功獲取 {len(target_stocks)} 檔股票名單！")
+print("2. 準備開始計算歷史動能與均線 (大數據運算需要幾分鐘，請稍候)...\n")
+
+results = []
+count = 0
+
+# 開始迴圈掃描 1000+ 檔股票
+for ticker, name in target_stocks.items():
+    count += 1
+    # 每 50 檔回報一次進度，讓你不會覺得程式當機
+    if count % 50 == 0:
+        print(f"🔄 進度回報：已掃描 {count} 檔股票...")
+        
+    try:
+        stock = yf.Ticker(ticker)
+        df = stock.history(period="1mo")
+
+        if len(df) < 15:
+            continue
+
+        close_prices = df['Close']
+        current_price = float(close_prices.iloc[-1])
+        prev10_price = float(close_prices.iloc[-11])
+        ma5 = float(close_prices.tail(5).mean())
+
+        # 🛑 嚴格標準不變：跌破 5 日線直接無情淘汰！
+        if current_price < ma5:
+            continue
+
+        roc10 = ((current_price - prev10_price) / prev10_price) * 100
+        bias = ((current_price - ma5) / ma5) * 100
+        score = (roc10 * 1.5) + (bias * 3.5)
+
+        results.append({
+            "代號": ticker.replace(".TW", ""), "名稱": name,
+            "現價": round(current_price, 2), "10D動能(%)": round(roc10, 2),
+            "MA5乖離(%)": round(bias, 2), "妖股分數": round(max(0, score), 2)
+        })
+    except Exception:
+        continue
+
+print("\n" + "="*60)
+
+if results:
+    final_df = pd.DataFrame(results)
+    final_df = final_df.sort_values(by="妖股分數", ascending=False).reset_index(drop=True)
+    pd.set_option('display.unicode.east_asian_width', True)
+    
+    # 呈現前 20 名
+    top20 = final_df.head(20)
+    print("🏆 掃描完成！本期最強妖股排行榜 🏆")
+    print(top20.to_string())
+    
+    # 🌟 最關鍵的這行：輸出前 20 名給 HTML 網頁
+    top20.to_json("top10.json", orient="records", force_ascii=False)
+    print("\n💾 成功！已經將前 20 名妖股資料存入 top10.json，網頁已可讀取！")
+else:
+    print("📉 目前大盤偏弱，無符合條件的標的。")

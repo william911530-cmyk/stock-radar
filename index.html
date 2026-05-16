@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACID_RADAR_v1.0</title>
+    <style>
+        :root {
+            --bg-color: #050514;
+            --neon-green: #39ff14;
+            --hot-pink: #ff007f;
+            --acid-yellow: #e6ff00;
+            --grid-color: rgba(57, 255, 20, 0.15);
+        }
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--neon-green);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 20px;
+            text-transform: uppercase;
+        }
+        /* 早期網路跑馬燈與標題效果 */
+        .header-container {
+            border: 3px dashed var(--hot-pink);
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 5px 5px 0px var(--hot-pink);
+        }
+        h1 { margin: 0; font-size: 28px; text-shadow: 2px 2px 0px var(--hot-pink); }
+        .blink-text { animation: blinker 1.5s linear infinite; color: var(--acid-yellow); font-size: 14px; margin-top: 10px;}
+        
+        /* 迷幻卡片設計 */
+        #radar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .cyber-card {
+            background: #0a0a2a;
+            border: 2px solid var(--neon-green);
+            padding: 15px;
+            position: relative;
+            box-shadow: 4px 4px 0px var(--neon-green);
+            transition: all 0.2s ease;
+        }
+        .cyber-card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--acid-yellow); border-color: var(--acid-yellow); }
+        
+        .stock-header { display: flex; justify-content: space-between; border-bottom: 1px dotted var(--neon-green); padding-bottom: 5px; margin-bottom: 10px; }
+        .stock-id { font-weight: bold; font-size: 20px; color: var(--acid-yellow); }
+        .score { background: var(--hot-pink); color: white; padding: 2px 8px; font-weight: bold; }
+        
+        .data-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 14px; }
+        .val-up { color: var(--hot-pink); font-weight: bold; }
+
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div class="header-container">
+    <h1>> SYSTEM.ACID_RADAR // 妖股探測器</h1>
+    <div class="blink-text" id="status-text">ESTABLISHING CONNECTION TO DATABASE...</div>
+</div>
+
+<div id="radar-grid"></div>
+
+<script>
+async function bootSystem() {
+    const statusText = document.getElementById('status-text');
+    const grid = document.getElementById('radar-grid');
+    
+    try {
+        const res = await fetch('./top10.json?t=' + new Date().getTime());
+        const results = await res.json();
+        
+        grid.innerHTML = "";
+        
+        if (results.length === 0) {
+            grid.innerHTML = `<div style="color: var(--hot-pink);">ERROR: NO STRONG SIGNALS DETECTED IN MARKET.</div>`;
+            return;
+        }
+
+        results.forEach(r => {
+            const roc = r['10D動能(%)'];
+            grid.innerHTML += `
+                <div class="cyber-card">
+                    <div class="stock-header">
+                        <span class="stock-id">[ ${r['代號']} ${r['名稱']} ]</span>
+                        <span class="score">PWR: ${r['妖股分數']}</span>
+                    </div>
+                    <div class="data-row"><span>PRICE:</span> <span>${r['現價']} NTD</span></div>
+                    <div class="data-row"><span>10D_MOMENTUM:</span> <span class="${roc >= 0 ? 'val-up' : ''}">${roc > 0 ? '+' : ''}${roc}%</span></div>
+                    <div class="data-row"><span>MA5_DEVIATION:</span> <span>${r['MA5乖離(%)']}%</span></div>
+                </div>
+            `;
+        });
+        statusText.innerText = "DATABASE SYNC SUCCESS. DISPLAYING TOP SIGNALS.";
+    } catch (e) {
+        statusText.innerText = "FATAL ERROR: top10.json NOT FOUND. INITIATE PYTHON SCRIPT.";
+    }
+}
+
+bootSystem();
+</script>
+
+</body>
+</html>
