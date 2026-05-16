@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUANTUM // 專業量化雷達</title>
+    <style>
+        :root { --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --accent: #3b82f6; --success: #22c55e; --border: #334155; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 30px; }
+        
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 30px; }
+        .title-group h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px; }
+        .title-group p { margin: 5px 0 0 0; color: #94a3b8; font-size: 13px; }
+        
+        /* 專業同步按鈕 */
+        .sync-btn {
+            background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        .sync-btn:hover { background: #2563eb; }
+        .sync-btn:active { transform: scale(0.95); }
+        .sync-icon { transition: transform 1s; }
+        .spinning { transform: rotate(360deg); }
+
+        /* 專業表格設計 */
+        table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #0f172a; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        tr:hover { background: #334155; }
+        
+        .stock-id { font-weight: bold; color: var(--accent); }
+        .score-badge { background: rgba(59, 130, 246, 0.2); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .positive { color: var(--success); }
+        
+        /* 載入遮罩 */
+        #loader { display: none; text-align: center; padding: 40px; color: #94a3b8; }
+        .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-header">
+    <div class="title-group">
+        <h1>QUANTUM QUANTITATIVE RADAR</h1>
+        <p>System Status: <span style="color: var(--success);">Online</span> | Strategy: Momentum Breakout</p>
+    </div>
+    <button class="sync-btn" onclick="fetchData()">
+        <span class="sync-icon" id="syncIcon">⟳</span> 重新載入最新運算
+    </button>
+</div>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <div>Retrieving latest AI analysis...</div>
+</div>
+
+<table id="dataTable">
+    <thead>
+        <tr>
+            <th>代號名稱</th>
+            <th>最新現價</th>
+            <th>10日動能</th>
+            <th>MA5乖離</th>
+            <th>量化分數</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody">
+        </tbody>
+</table>
+
+<script>
+    async function fetchData() {
+        const icon = document.getElementById('syncIcon');
+        const loader = document.getElementById('loader');
+        const table = document.getElementById('dataTable');
+        const tbody = document.getElementById('tableBody');
+        
+        // 播放載入動畫
+        icon.classList.add('spinning');
+        table.style.display = 'none';
+        loader.style.display = 'block';
+
+        try {
+            // 加上時間戳記，確保每次按鈕都會強制抓最新資料，不使用瀏覽器暫存
+            const res = await fetch('./top10.json?t=' + new Date().getTime());
+            const results = await res.json();
+            
+            tbody.innerHTML = "";
+            results.forEach(r => {
+                const roc = r['10D動能(%)'];
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="stock-id">${r['代號']}</span> ${r['名稱']}</td>
+                        <td>$${r['現價']}</td>
+                        <td class="${roc > 0 ? 'positive' : ''}">${roc > 0 ? '+' : ''}${roc}%</td>
+                        <td>${r['MA5乖離(%)']}%</td>
+                        <td><span class="score-badge">${r['妖股分數']}</span></td>
+                    </tr>
+                `;
+            });
+            
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444;">資料庫讀取失敗，請確認 Python 已執行完畢。</td></tr>`;
+        }
+
+        // 停止動畫並顯示表格 (設定一點延遲讓使用者感覺有在讀取)
+        setTimeout(() => {
+            icon.classList.remove('spinning');
+            loader.style.display = 'none';
+            table.style.display = 'table';
+        }, 600);
+    }
+
+    // 網頁載入時自動執行一次
+    fetchData();
+</script>
+
+</body>
+</html>
