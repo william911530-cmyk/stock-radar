@@ -93,28 +93,48 @@
     // 初始化群組資料，預設給一個 "核心觀察" 群組
     let watchlists = JSON.parse(localStorage.getItem('quantumWatchlists')) || { "核心觀察": [] };
 
-    async function loadAllData() {
-        document.getElementById('aiTable').innerHTML = "<tr><td colspan='5'>Loading AI Data...</td></tr>";
+   async function loadAllData() {
+        document.getElementById('aiTable').innerHTML = "<tr><td colspan='5' style='text-align:center;'>Loading AI Radar...</td></tr>";
         
+        // ==========================================
+        // 任務一：獨立讀取 AI 妖股雷達 (top10.json)
+        // ==========================================
         try {
-            // 1. 讀取 AI 雷達數據
             const resAI = await fetch('./top10.json?t=' + new Date().getTime());
-            const dataAI = await resAI.json();
-            renderAITable(dataAI);
-            
-            // 2. 讀取全市場資料庫 (由 Python 產生)
-            const resAll = await fetch('./all_stocks.json?t=' + new Date().getTime());
-            allStocksData = await resAll.json();
-            
+            if (resAI.ok) {
+                // 如果有之前的舊資料 (例如週五的)，就完美顯示出來！
+                const dataAI = await resAI.json();
+                renderAITable(dataAI);
+            } else {
+                document.getElementById('aiTable').innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8; padding:20px;'>無 AI 運算紀錄（等待首次執行）... ⏳</td></tr>";
+            }
         } catch (e) {
-            console.error(e);
-            document.getElementById('aiTable').innerHTML = "<tr><td colspan='5' style='color:#ef4444;'>ERROR: 無法讀取本地 JSON 資料庫，請確認 Python 已產生檔案。</td></tr>";
+            document.getElementById('aiTable').innerHTML = "<tr><td colspan='5' style='text-align:center; color:#ef4444;'>雷達資料庫連線異常</td></tr>";
         }
         
+        // ==========================================
+        // 任務二：獨立讀取全市場資料庫 (all_stocks.json)
+        // ==========================================
+        try {
+            const resAll = await fetch('./all_stocks.json?t=' + new Date().getTime());
+            if (resAll.ok) {
+                allStocksData = await resAll.json();
+                document.getElementById('searchResults').innerHTML = "<div style='color:#94a3b8; text-align:center; padding: 20px;'>資料庫已載入，請輸入關鍵字進行檢索</div>";
+            } else {
+                // 因為我們這週末才剛寫好這功能，檔案還沒生出來，所以這裡會優雅地顯示提示，且不會搞砸上面的雷達！
+                allStocksData = [];
+                document.getElementById('searchResults').innerHTML = "<div style='text-align:center; color:#94a3b8; padding:20px;'>全市場資料庫尚未建立（等待週一開盤更新）... ⏳</div>";
+            }
+        } catch (e) {
+            allStocksData = [];
+            document.getElementById('searchResults').innerHTML = "<div style='text-align:center; color:#ef4444;'>全市場資料庫連線異常</div>";
+        }
+        
+        // 載入自訂群組
         renderWatchlists();
         updateGroupSelect();
     }
-
+    
     function renderAITable(data) {
         const tbody = document.getElementById('aiTable');
         tbody.innerHTML = "";
