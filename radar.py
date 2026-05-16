@@ -13,6 +13,12 @@ url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
 res = requests.get(url)
 all_stocks = res.json()
 
+# 👇 新增這三行：把全市場資料存成檔案，專門給可愛購物車讀取
+import json
+with open("all_stocks.json", "w", encoding="utf-8") as f:
+    json.dump(all_stocks, f, ensure_ascii=False)
+
+
 # 過濾出純股票 (代號長度為4的才是普通股票，排除權證、債券等)
 target_stocks = {s['Code'] + ".TW": s['Name'] for s in all_stocks if len(s['Code']) == 4}
 
