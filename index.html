@@ -115,7 +115,7 @@ async function bootSystem() {
     const grid = document.getElementById('radar-grid');
     
     try {
-        const res = await fetch('./top10.json?t=' + new Date().getTime());
+        const res = await fetch('./top20.json?t=' + new Date().getTime());
         const results = await res.json();
         
         grid.innerHTML = "";
