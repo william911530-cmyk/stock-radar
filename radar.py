@@ -43,7 +43,8 @@ for idx, batch in enumerate(batches):
     print(f"   🔄 正在下載第 {idx+1}/{len(batches)} 批次...")
     try:
         # 🛡️ 核心防護：threads=False 強迫乖乖排隊下載，絕不觸發機房警報！
-        batch_data = yf.download(batch, period="1mo", group_by='ticker', progress=False, threads=False, timeout=30)
+        # 🚀 新的：拿掉 threads 參數，靠小批次跟 sleep 就能完美通關！
+        batch_data = yf.download(batch, period="1mo", group_by='ticker', progress=False, timeout=30)
         
         if not batch_data.empty:
             if full_data.empty:
