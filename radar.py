@@ -12,16 +12,16 @@ warnings.filterwarnings('ignore')
 print("🔥 啟動終極妖股雷達 (全市場掃描 + JSON輸出版) 🔥")
 print("1. 正在向證交所取得最新上市股票清單...")
 
-# 從證交所抓取全市場大數據名單 (加入防護網與代理伺服器)
+# 從證交所抓取全市場大數據名單 (拔掉前端專用的 allorigins 代理，改為官方直連)
 print("1. 正在向證交所取得最新上市股票清單...")
 try:
-    # 透過代理伺服器繞過海外 IP 封鎖，並設定 15 秒超時放棄
-    url = "https://api.allorigins.win/raw?url=https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    # 🚀 修正：後端 Python 不需要 CORS 代理，直接呼叫證交所官方 API 最快最穩！
+    url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     res = requests.get(url, headers=headers, timeout=15)
     all_stocks = res.json()
 except Exception as e:
-    print(f"❌ 證交所連線失敗 (可能為週末維護或阻擋海外 IP): {e}")
+    print(f"❌ 證交所直連失敗 (原因: {e})")
     print("🛑 任務安全中止，今日不更新 JSON，維持使用昨日舊數據。")
     import sys
     sys.exit(0)  # 告訴 GitHub：程式是正常結束的，請給我綠色打勾！
