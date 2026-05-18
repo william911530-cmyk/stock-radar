@@ -85,7 +85,8 @@ if results:
     print(top20.to_string())
     
     # 🌟 最關鍵的這行：輸出前 20 名給 HTML 網頁
-    top20.to_json("top10.json", orient="records", force_ascii=False)
+    # 更改後 🚀
+    top20.to_json("top20.json", orient="records", force_ascii=False)
     print("\n💾 成功！已經將前 20 名妖股資料存入 top10.json，網頁已可讀取！")
 else:
     print("📉 目前大盤偏弱，無符合條件的標的。")
