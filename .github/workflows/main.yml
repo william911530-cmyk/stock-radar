@@ -33,7 +33,8 @@ jobs:
         run: |
           git config user.name "Radar Bot"
           git config user.email "bot@example.com"
-          git pull --rebase origin main  # 🌟 神級指令：先同步大廳的最新狀態，避免衝突
+          git pull --rebase origin main
           git add *.json
-          git commit -m "Auto-update radar data" || echo "資料無變動，略過存檔"
-          git push || echo "無新資料需上傳"
+          # 如果沒有產出新檔案，這步可以略過；但如果是推播失敗，絕對要亮紅燈！
+          git commit -m "Auto-update radar data" || echo "資料無變動"
+          git push
