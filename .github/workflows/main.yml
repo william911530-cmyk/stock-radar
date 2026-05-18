@@ -34,7 +34,14 @@ jobs:
           git config user.name "Radar Bot"
           git config user.email "bot@example.com"
           git pull --rebase origin main
-          git add *.json
-          # 如果沒有產出新檔案，這步可以略過；但如果是推播失敗，絕對要亮紅燈！
+          
+          # 🔍 X光探照燈：印出機房裡到底有什麼檔案！
+          echo "=== 目前機房檔案清單 ==="
+          ls -la
+          echo "========================"
+          
+          # 👮 強制執法：無視任何隱藏阻擋規則，強迫把 json 塞進去！
+          git add -f *.json
+          
           git commit -m "Auto-update radar data" || echo "資料無變動"
-          git push
+          git push origin HEAD:main
