@@ -33,15 +33,12 @@ jobs:
         run: |
           git config user.name "Radar Bot"
           git config user.email "bot@example.com"
+          # 1. 先把剛生出來的熱騰騰 JSON 檔案打包裝箱！
+          git add *.json
+          git commit -m "Auto-update radar data" || echo "資料無變動"
+          
+          # 2. 裝箱完畢後，桌子乾淨了，再來跟大廳同步，保證不會衝突！
           git pull --rebase origin main
           
-          # 🔍 X光探照燈：印出機房裡到底有什麼檔案！
-          echo "=== 目前機房檔案清單 ==="
-          ls -la
-          echo "========================"
-          
-          # 👮 強制執法：無視任何隱藏阻擋規則，強迫把 json 塞進去！
-          git add -f *.json
-          
-          git commit -m "Auto-update radar data" || echo "資料無變動"
-          git push origin HEAD:main
+          # 3. 完美推上大廳
+          git push
