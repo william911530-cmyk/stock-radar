@@ -3,6 +3,10 @@ import pandas as pd
 import requests
 import warnings
 
+# 👇 建立一個偽裝成真人瀏覽器的 Session，突破 Yahoo 封鎖
+session = requests.Session()
+session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+
 warnings.filterwarnings('ignore')
 
 print("🔥 啟動終極妖股雷達 (全市場掃描 + JSON輸出版) 🔥")
@@ -38,15 +42,17 @@ results = []
 count = 0
 
 # 開始迴圈掃描 1000+ 檔股票
+# ... 上面的迴圈 ...
 for ticker, name in target_stocks.items():
     count += 1
-    # 每 50 檔回報一次進度，讓你不會覺得程式當機
     if count % 50 == 0:
         print(f"🔄 進度回報：已掃描 {count} 檔股票...")
         
     try:
-        stock = yf.Ticker(ticker)
+        # 👇 這裡加上 session=session，用偽裝的身分去抓資料
+        stock = yf.Ticker(ticker, session=session)
         df = stock.history(period="1mo")
+        # ... 後面維持你原本的邏輯 ...
 
         if len(df) < 15:
             continue
@@ -74,19 +80,20 @@ for ticker, name in target_stocks.items():
 
 print("\n" + "="*60)
 
-if results:
+if results:  # 如果有抓到妖股
     final_df = pd.DataFrame(results)
     final_df = final_df.sort_values(by="妖股分數", ascending=False).reset_index(drop=True)
     pd.set_option('display.unicode.east_asian_width', True)
     
-    # 呈現前 20 名
     top20 = final_df.head(20)
     print("🏆 掃描完成！本期最強妖股排行榜 🏆")
     print(top20.to_string())
     
-    # 🌟 最關鍵的這行：輸出前 20 名給 HTML 網頁
-    # 更改後 🚀
     top20.to_json("top20.json", orient="records", force_ascii=False)
-    print("\n💾 成功！已經將前 20 名妖股資料存入 top10.json，網頁已可讀取！")
+    print("\n💾 成功！已經將前 20 名妖股資料存入 top20.json！")
 else:
+    # 👇 最關鍵的防呆：如果大盤太爛或被擋，強制生出一個空的 JSON 給網頁吃
     print("📉 目前大盤偏弱，無符合條件的標的。")
+    with open("top20.json", "w", encoding="utf-8") as f:
+        f.write("[]")
+    print("💾 已生成空的 top20.json 防止網頁當機！")
